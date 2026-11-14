@@ -51,17 +51,21 @@ Background: [ADR-0003](docs/decisions/ADR-0003-zero-row-engine.md).
 ## Quickstart
 
 There is no PyPI release yet. Build a wheel (see [installation](docs/installation.md#build-a-wheel))
-or install from a git URL of this repository. The built browser UI is committed under
-`autotune_studio/web/`, so both a wheel and a `git+` install include it.
+or install from this repository (`https://github.com/AAB20/autotune-studio.git`). The built browser
+UI is committed under `autotune_studio/web/`, so both a wheel and a `git+` install include it.
+
+The repository is **private**: a notebook needs a read-only GitHub token to install it. Create a
+fine-grained token with *Contents: Read* on this repository and store it as the secret `GITHUB_TOKEN`
+(Colab: *Secrets* panel; Kaggle: *Add-ons > Secrets*). The notebooks read it without printing it.
 
 ### Google Colab (UNVERIFIED)
 Open [`notebooks/colab.ipynb`](notebooks/colab.ipynb), select a T4 GPU runtime and run the cells in
-order. The install cell takes a git URL or an uploaded wheel. Details: [docs/colab.md](docs/colab.md).
+order. The install cell installs from the repository (needs `GITHUB_TOKEN`) or an uploaded wheel. Details: [docs/colab.md](docs/colab.md).
 
 ### Kaggle (UNVERIFIED)
 Open [`notebooks/kaggle.ipynb`](notebooks/kaggle.ipynb). In *Settings*, choose a GPU accelerator and
-switch **Internet ON** (this needs a phone-verified account). Add the wheel as a Kaggle dataset, or
-set the git URL. Details: [docs/kaggle.md](docs/kaggle.md).
+switch **Internet ON** (this needs a phone-verified account). Install from the repository (needs the
+`GITHUB_TOKEN` secret) or add the wheel as a Kaggle dataset. Details: [docs/kaggle.md](docs/kaggle.md).
 
 ### Local (verified on Windows, CPU)
 ```bash

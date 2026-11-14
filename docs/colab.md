@@ -22,7 +22,10 @@ See the notebook's install cell and [installation.md](installation.md#google-col
 - **Wheel (recommended).** Build it locally (`npm run build` in `frontend/`, then
   `uv build --wheel`), upload it with `google.colab.files.upload()` and run
   `pip install "/content/<wheel>[hf,train]"`. The wheel includes the browser UI.
-- **Git URL.** `pip install "autotune-studio[hf,train] @ git+<url>"`. The built UI is committed in
+- **Git URL** (notebook default `https://github.com/AAB20/autotune-studio.git`).
+  The repository is private: store a read-only GitHub token (fine-grained, *Contents: Read*) as the
+  secret `GITHUB_TOKEN`; the notebook adds it to the URL and masks it in any pip error output.
+  Equivalent: `pip install "autotune-studio[hf,train] @ git+<url>"`. The built UI is committed in
   the repository, so this includes the browser UI too.
 - **GPU extras.** `pip install unsloth bitsandbytes nvidia-ml-py`. Do **not** force-reinstall
   torch: Colab's torch matches its CUDA driver. Unsloth's install instructions change often; if
