@@ -31,7 +31,11 @@ export function handleEventSideEffects(ev: StudioEvent, qc: QueryClient): void {
       if (id) {
         const stats = (typeof data.stats === "object" && data.stats ? data.stats : data) as StreamStats;
         qc.setQueryData(qk.stats(id), stats);
-        if (stats.state === "exhausted") void qc.invalidateQueries({ queryKey: qk.dataset(id), exact: true });
+        if (stats.state === "exhausted") {
+          // A completed scan updates the dataset's cardinality: refresh the detail and the list.
+          void qc.invalidateQueries({ queryKey: qk.dataset(id), exact: true });
+          void qc.invalidateQueries({ queryKey: qk.datasets, exact: true });
+        }
       }
       break;
     }

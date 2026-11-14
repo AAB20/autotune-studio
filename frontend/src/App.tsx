@@ -61,10 +61,22 @@ export default function App({ queryClient }: { queryClient?: QueryClient }) {
   useEffect(() => {
     let alive = true;
     void bootstrapAuth().then((s) => alive && setAuth(s));
+    // A fresh launch link opened in an already-loaded tab only changes the hash: re-run the
+    // token exchange (and drop cached data from the previous server session).
+    const onHash = () => {
+      if (!/(^#|[?&])token=/.test(window.location.hash)) return;
+      void bootstrapAuth().then((s) => {
+        if (!alive) return;
+        qc.clear();
+        setAuth(s);
+      });
+    };
+    window.addEventListener("hashchange", onHash);
     return () => {
       alive = false;
+      window.removeEventListener("hashchange", onHash);
     };
-  }, []);
+  }, [qc]);
 
   // Seed the env query so the layout does not refetch what auth already loaded.
   useEffect(() => {
