@@ -80,6 +80,7 @@ class Studio:
         allowed_roots: list[str] | None = None,
         *,
         resource_interval: float = 2.0,
+        replay_size: int | None = None,
     ) -> None:
         from .core.environment import detect_environment, ensure_workspace
         from .core.lifecycle import TrainingLifecycle
@@ -87,7 +88,11 @@ class Studio:
         from .monitoring.metrics import MetricsStore, ResourceSampler
         from .security import PathPolicy, SessionAuth
 
-        self.events = EventBus()
+        if replay_size is None:
+            from .core.config import load_settings
+
+            replay_size = load_settings().replay_size
+        self.events = EventBus(replay_size=replay_size)
         env = detect_environment()
         updates: dict[str, Any] = {}
         if workspace_dir is not None:

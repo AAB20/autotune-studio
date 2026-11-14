@@ -69,12 +69,12 @@ class _InterceptingSink:
                     },
                     publish=False,
                 )
-            except Exception:  # noqa: BLE001 - malformed metric must not kill training
+            except Exception:
                 log.exception("bad metric event")
         elif type == "checkpoint":
             try:
                 lc._checkpoints.append(CheckpointInfo.model_validate(data))
-            except Exception:  # noqa: BLE001
+            except Exception:
                 log.exception("bad checkpoint event")
             lc._checkpoint_saved.set()
         lc.events.publish(type, data)
@@ -92,7 +92,7 @@ class TrainingLifecycle:
     ) -> None:
         self.events = events
         self.engine_factory = engine_factory
-        self.metrics = metrics or MetricsStore()
+        self.metrics = metrics if metrics is not None else MetricsStore()
         self.history_path = Path(history_path) if history_path else None
         self._lock = threading.RLock()
         self._status = TrainingStatus()
@@ -294,7 +294,7 @@ class TrainingLifecycle:
             )
         except StudioError as exc:
             error = f"{exc.code}: {exc.message}"
-        except Exception as exc:  # noqa: BLE001 - report every failure to the UI
+        except Exception as exc:
             log.exception("training job %s failed", job_id)
             error = f"{type(exc).__name__}: {exc}"
         if error is not None:

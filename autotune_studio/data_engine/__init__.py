@@ -34,6 +34,11 @@ __all__ = [
 ]
 
 
+import pyarrow as pa
+
+from ..errors import DatasetMalformed
+
+
 def open_dataset(spec: DatasetSpec, budget: MemoryBudget | None = None,
                  events: EventSink | None = None) -> StreamingDataset:
     """Open ``spec`` as a :class:`StreamingDataset` after byte-bounded discovery.
@@ -44,5 +49,9 @@ def open_dataset(spec: DatasetSpec, budget: MemoryBudget | None = None,
     """
     budget = budget or MemoryBudget.from_system()
     sample_connector = make_connector(spec, min(budget.batch_bytes, budget.sample_bytes))
-    info = discover(sample_connector, spec, budget.sample_bytes)
+    try:
+        info = discover(sample_connector, spec, budget.sample_bytes)
+    except (pa.ArrowInvalid, pa.ArrowTypeError, UnicodeDecodeError) as exc:
+        # Corrupt/unparseable source (e.g. not really a parquet file): a data problem, not a server error.
+        raise DatasetMalformed(f"could not parse dataset: {type(exc).__name__}: {str(exc)[:300]}") from None
     return StreamingDataset(info, make_connector(spec, budget.batch_bytes), budget=budget, events=events)
