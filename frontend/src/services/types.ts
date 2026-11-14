@@ -261,6 +261,7 @@ export const ErrorCode = {
   CONFLICT: "conflict",
   FORBIDDEN_PATH: "forbidden_path",
   UNAUTHORIZED: "unauthorized",
+  RATE_LIMITED: "rate_limited",
   DEPENDENCY_MISSING: "dependency_missing",
   DATASET_EMPTY: "dataset_empty",
   DATASET_MALFORMED: "dataset_malformed",

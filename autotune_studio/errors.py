@@ -51,3 +51,20 @@ class StepsRequired(StudioError):
 
 class OutOfMemory(StudioError):
     code, http_status = ErrorCode.OOM, 507
+
+
+class Unauthorized(StudioError):
+    code, http_status = ErrorCode.UNAUTHORIZED, 401
+
+    def __init__(self, message: str = "authentication required", detail: dict[str, Any] | None = None) -> None:
+        super().__init__(message, detail)
+
+
+class RateLimited(StudioError):
+    code, http_status = ErrorCode.RATE_LIMITED, 429
+
+    def __init__(self, retry_after: float) -> None:
+        super().__init__(
+            "too many failed authentication attempts", {"retry_after_seconds": round(retry_after, 1)}
+        )
+        self.retry_after = retry_after
