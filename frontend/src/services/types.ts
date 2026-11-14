@@ -130,6 +130,7 @@ export interface HardwareInfo {
   bf16_supported?: boolean;
   gpus?: Array<GPUInfo>;
   nvml_available?: boolean;
+  notes?: Array<string>;
 }
 
 export interface LaunchInfo {

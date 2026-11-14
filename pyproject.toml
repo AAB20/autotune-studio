@@ -38,6 +38,7 @@ artifacts = ["autotune_studio/web/**"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 timeout = 300
 markers = [
   "slow: long-running tests (tiny-model training)",

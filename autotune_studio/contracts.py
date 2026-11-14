@@ -62,6 +62,7 @@ class HardwareInfo(_Model):
     bf16_supported: bool = False
     gpus: list[GPUInfo] = Field(default_factory=list)
     nvml_available: bool = False
+    notes: list[str] = Field(default_factory=list)
 
 
 LaunchMethod = Literal["colab_proxy", "cloudflared", "local"]
