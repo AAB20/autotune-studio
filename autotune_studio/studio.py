@@ -108,7 +108,10 @@ class Studio:
         self._active_dataset_id: str | None = None
         self._scan_threads: dict[str, threading.Thread] = {}
         self.model_config: ModelConfig | None = None
-        self.training_config: TrainingConfig = TrainingConfig()
+        from .monitoring.gpu import cuda_available
+
+        # QLoRA needs CUDA; default to plain LoRA elsewhere so the defaults are always startable.
+        self.training_config: TrainingConfig = TrainingConfig(method="qlora" if cuda_available() else "lora")
 
         self.monitor = ResourceMonitor()
         self.sampler = ResourceSampler(self.monitor, self.events, interval=resource_interval)
