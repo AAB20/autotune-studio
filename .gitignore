@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+node_modules/
+frontend/dist/
+autotune_studio/web/*
+!autotune_studio/web/.gitkeep
+.autotune/
+outputs/
+*.egg-info/
+build/
+dist/
+.claude/agents/
+.claude/skills/

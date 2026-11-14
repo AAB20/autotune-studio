@@ -1,0 +1,2 @@
+# Colab ships torch/transformers; we do not force-reinstall torch.
+autotune-studio[hf,train,gpu]
