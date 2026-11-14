@@ -56,7 +56,8 @@ UI is committed under `autotune_studio/web/`, so both a wheel and a `git+` insta
 
 The repository is **private**: a notebook needs a read-only GitHub token to install it. Create a
 fine-grained token with *Contents: Read* on this repository and store it as the secret `GITHUB_TOKEN`
-(Colab: *Secrets* panel; Kaggle: *Add-ons > Secrets*). The notebooks read it without printing it.
+(Colab: *Secrets* panel with *Notebook access* on; Kaggle: *Add-ons > Secrets*, attached to the notebook).
+The notebooks passes it to git only through the environment of the install command (`http.extraHeader` via `GIT_CONFIG_*`), so it is not in the URL, not printed, not in `~/.gitconfig`, and not in the installed package's metadata or `pip freeze`. Without a token the install fails immediately with a hint (git prompts are disabled).
 
 ### Google Colab (UNVERIFIED)
 Open [`notebooks/colab.ipynb`](notebooks/colab.ipynb), select a T4 GPU runtime and run the cells in
