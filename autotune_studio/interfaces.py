@@ -54,8 +54,15 @@ class Connector(Protocol):
 
     kind: str
 
-    def iter_batches(self, cursor: StreamCursor | None = None) -> Iterator[tuple[pa.RecordBatch, StreamCursor]]:
-        """Yield (batch, cursor_after_batch). Raises on I/O / parse failure (never returns silently)."""
+    def iter_batches(
+        self,
+        cursor: StreamCursor | None = None,
+        on_malformed: Callable[[Any], None] | None = None,
+    ) -> Iterator[tuple[pa.RecordBatch, StreamCursor]]:
+        """Yield (batch, cursor_after_batch). Raises on I/O / parse failure (never returns silently).
+
+        Unparseable records are reported through ``on_malformed`` (ADR-0006), never dropped silently.
+        """
         ...
 
     def cardinality(self) -> Cardinality:
