@@ -121,7 +121,7 @@ Use [`notebooks/colab.ipynb`](../notebooks/colab.ipynb). In short:
 ```python
 # keep Colab's preinstalled torch; no --force-reinstall
 !pip install -q "/content/autotune_studio-0.1.0-py3-none-any.whl[hf,train]"   # after uploading the wheel
-# or: !pip install -q "autotune-studio[hf,train] @ git+https://github.com/AAB20/autotune-studio.git"  # private repo: use the notebook install cell (GITHUB_TOKEN)
+# or: !pip install -q "autotune-studio[hf,train] @ git+https://github.com/AAB20/autotune-studio.git"
 !pip install -q unsloth bitsandbytes nvidia-ml-py
 ```
 

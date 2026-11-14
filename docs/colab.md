@@ -23,8 +23,7 @@ See the notebook's install cell and [installation.md](installation.md#google-col
   `uv build --wheel`), upload it with `google.colab.files.upload()` and run
   `pip install "/content/<wheel>[hf,train]"`. The wheel includes the browser UI.
 - **Git URL** (notebook default `https://github.com/AAB20/autotune-studio.git`).
-  The repository is private: store a read-only GitHub token (fine-grained, *Contents: Read*) as the
-  secret `GITHUB_TOKEN`; the notebook passes it to git only through the environment of the install command (`http.extraHeader` via `GIT_CONFIG_*`), so it is not in the URL, not printed, not in `~/.gitconfig`, and not in the installed package's metadata or `pip freeze`. Without a token the install fails immediately with a hint (git prompts are disabled).
+  The repository is public: no token is needed.
   Equivalent: `pip install "autotune-studio[hf,train] @ git+<url>"`. The built UI is committed in
   the repository, so this includes the browser UI too.
 - **GPU extras.** `pip install unsloth bitsandbytes nvidia-ml-py`. Do **not** force-reinstall

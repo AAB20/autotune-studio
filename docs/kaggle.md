@@ -24,9 +24,7 @@ Changing Internet or the accelerator restarts the session. Re-run from the top.
   `pip install "<wheel>[hf,train]"`. The wheel includes the browser UI. Its dependencies still
   come from PyPI, so Internet must be ON.
 - **Git URL** (notebook default `https://github.com/AAB20/autotune-studio.git`, includes the built UI).
-  The repository is private: store a read-only GitHub token (fine-grained, *Contents: Read*) as the
-  Kaggle secret `GITHUB_TOKEN`; the notebook passes it to git only through the environment of the install command (`http.extraHeader` via `GIT_CONFIG_*`), so it is not in the URL, not printed, not in `~/.gitconfig`, and not in the installed package's metadata or `pip freeze`. Without a token the install fails immediately with a hint (git prompts are disabled).
-  Internet must be ON.
+  The repository is public: no token is needed.   Internet must be ON.
 - **GPU extras.** `pip install unsloth bitsandbytes nvidia-ml-py`. Keep Kaggle's torch; do not
   force-reinstall it. If Unsloth fails to install, follow https://github.com/unslothai/unsloth.
 

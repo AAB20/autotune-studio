@@ -1,16 +1,14 @@
 """Single source of truth for the install cell of ``notebooks/colab.ipynb`` and ``notebooks/kaggle.ipynb``.
 
-The two notebooks share the install logic; only the secret lookup and the wheel location differ.
+The two notebooks share the install logic; only the wheel location differs.
 
 Usage::
 
     python scripts/notebook_install_cell.py          # rewrite the install cells (and option text) in both notebooks
     python scripts/notebook_install_cell.py --check  # exit 1 if a notebook is out of sync (used by tests)
 
-Security: the GitHub token is never put in the git URL. It reaches git only through
-environment-only config (``GIT_CONFIG_COUNT`` / ``http.<url>.extraHeader``) of the pip subprocess,
-so it is not written to installed-package metadata (``direct_url.json``), not shown by
-``pip freeze``, not stored in ``~/.gitconfig`` and not visible in the process arguments.
+Install sources: the public GitHub repository (default) or an uploaded wheel. No credentials are
+needed; git prompts are disabled so a bad URL fails fast instead of waiting for a login.
 """
 
 from __future__ import annotations
@@ -23,23 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 REPO_URL = "https://github.com/AAB20/autotune-studio.git"
 
-_SECRET = {
-    "colab": (
-        "        from google.colab import userdata\n"
-        '        return userdata.get("GITHUB_TOKEN")\n'
-    ),
-    "kaggle": (
-        "        from kaggle_secrets import UserSecretsClient\n"
-        '        return UserSecretsClient().get_secret("GITHUB_TOKEN")\n'
-    ),
-}
-
-_SECRET_WHERE = {
-    "colab": "the Colab *Secrets* panel (key icon) and enable *Notebook access*",
-    "kaggle": "Kaggle *Add-ons > Secrets* and attach it to this notebook",
-}
-
-_IMPORTS = {"colab": "import base64, os, subprocess, sys", "kaggle": "import base64, glob, os, subprocess, sys"}
+_IMPORTS = {"colab": "import os, subprocess, sys", "kaggle": "import glob, os, subprocess, sys"}
 
 _WHEEL_BRANCH = {
     "colab": '''else:
@@ -61,11 +43,8 @@ _WHEEL_BRANCH = {
 }
 
 _OPTION_A = (
-    "* **(a)** install from the git repository (default: `{repo}`). The repository includes the built browser UI. "
-    "**The repository is private:** create a read-only GitHub token (fine-grained, *Contents: Read* on this "
-    "repository) and store it as `GITHUB_TOKEN` in {where}. The token is passed to git only through the "
-    "environment of the install command: it is not put in the URL, not printed, and not saved in the installed "
-    "package's metadata.\n"
+    "* **(a)** install from the public git repository (default: `{repo}`). No token is needed. "
+    "The repository includes the built browser UI.\n"
 )
 _OPTION_B_PREFIX = "* **(b)** "
 _OPTION_B_OLD = "leave `AUTOTUNE_SOURCE` empty and "
@@ -79,43 +58,17 @@ INSTALL_GPU_EXTRAS = True   # unsloth, bitsandbytes, nvidia-ml-py
 
 {_IMPORTS[runtime]}
 
-def _github_token():
-    try:
-{_SECRET[runtime]}    except Exception as exc:  # secret missing or notebook access not granted
-        print(f"No GITHUB_TOKEN secret available ({{type(exc).__name__}}).")
-        return None
-
-def pip_install(*args, token=None):
-    """Run pip quietly; on failure print its output (secrets masked) and raise."""
+def pip_install(*args):
+    """Run pip quietly; on failure print its output and raise."""
     env = dict(os.environ, GIT_TERMINAL_PROMPT="0")  # never wait for an interactive git login
-    masks = []
-    if token:
-        # Environment-only git config: the token never appears in the URL, argv, ~/.gitconfig or
-        # the installed package's direct_url.json (which `pip freeze` prints).
-        basic = base64.b64encode(f"x-access-token:{{token}}".encode()).decode()
-        env.update(GIT_CONFIG_COUNT="1",
-                   GIT_CONFIG_KEY_0="http.https://github.com/.extraheader",
-                   GIT_CONFIG_VALUE_0=f"Authorization: Basic {{basic}}")
-        masks = [token, basic]
     r = subprocess.run([sys.executable, "-m", "pip", "install", "-q", *args],
                        capture_output=True, text=True, env=env)
     if r.returncode != 0:
-        out = r.stdout + r.stderr
-        for secret in masks:
-            out = out.replace(secret, "***")
-        print(out[-4000:])
+        print((r.stdout + r.stderr)[-4000:])
         raise subprocess.CalledProcessError(r.returncode, "pip install")
 
 if AUTOTUNE_SOURCE:
-    token = _github_token()
-    try:
-        pip_install(f"autotune-studio[hf,train] @ git+{{AUTOTUNE_SOURCE}}", token=token)
-    except subprocess.CalledProcessError:
-        if not token:
-            print("Installing from the private repository needs a GitHub token: store a read-only token as "
-                  "GITHUB_TOKEN in {_SECRET_WHERE[runtime]}, then re-run this cell. "
-                  'Or set AUTOTUNE_SOURCE = "" to install a wheel instead.')
-        raise
+    pip_install(f"autotune-studio[hf,train] @ git+{{AUTOTUNE_SOURCE}}")
 {_WHEEL_BRANCH[runtime]}
 if INSTALL_GPU_EXTRAS:
     try:
@@ -136,7 +89,7 @@ def _render(runtime: str, nb: dict) -> dict:
             lines = src.splitlines(keepends=True)
             for i, line in enumerate(lines):
                 if line.startswith("* **(a)**"):
-                    lines[i] = _OPTION_A.format(repo=REPO_URL, where=_SECRET_WHERE[runtime])
+                    lines[i] = _OPTION_A.format(repo=REPO_URL)
                 elif line.startswith(_OPTION_B_PREFIX):
                     lines[i] = line.replace(_OPTION_B_OLD, _OPTION_B_NEW)
             src = "".join(lines)
