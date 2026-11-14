@@ -7,6 +7,7 @@ Uses Pydantic JSON schemas; supports the subset of schema features used by the c
 from __future__ import annotations
 
 import enum
+import json
 import inspect
 import sys
 from pathlib import Path
@@ -26,7 +27,7 @@ def ts_type(schema: dict[str, Any]) -> str:
     if "$ref" in schema:
         return schema["$ref"].rsplit("/", 1)[-1]
     if "const" in schema:
-        return repr(schema["const"]).replace("'", '"')
+        return json.dumps(schema["const"])
     if "enum" in schema:
         return " | ".join(f'"{v}"' if isinstance(v, str) else str(v) for v in schema["enum"])
     if "anyOf" in schema:

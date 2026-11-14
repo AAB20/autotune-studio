@@ -167,7 +167,7 @@ export interface ModelConfig {
   load_in_4bit?: boolean;
   dtype?: "auto" | "float16" | "bfloat16" | "float32";
   /** Remote code execution is never allowed (security policy). */
-  trust_remote_code?: False;
+  trust_remote_code?: false;
 }
 
 export interface ResourceSnapshot {
