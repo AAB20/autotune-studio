@@ -46,6 +46,12 @@ export interface DatasetInfo {
   warnings?: Array<string>;
 }
 
+export interface DatasetInspection {
+  info: DatasetInfo;
+  preview: DatasetPreview;
+  stats: StreamStats;
+}
+
 export interface DatasetPreview {
   columns: Array<string>;
   rows: Array<Record<string, unknown>>;
@@ -135,6 +141,12 @@ export interface LaunchInfo {
   /** URL to open in a new tab, includes one-time auth fragment. */
   open_url?: string | null;
   diagnostics?: Array<string>;
+}
+
+export interface LogEventData {
+  level?: "debug" | "info" | "warning" | "error";
+  source?: string;
+  message: string;
 }
 
 export interface MetricPoint {

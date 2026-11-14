@@ -156,6 +156,14 @@ class DatasetPreview(_Model):
     truncated_values: bool = False
 
 
+class DatasetInspection(_Model):
+    """Combined view returned by ``Studio.inspect_dataset``."""
+
+    info: DatasetInfo
+    preview: DatasetPreview
+    stats: StreamStats
+
+
 # --------------------------------------------------------------------------- model / training
 class ModelConfig(_Model):
     model_name: str = Field(..., min_length=1)
@@ -306,6 +314,15 @@ class Event(_Model):
     type: EventType
     ts: float = Field(default_factory=time.time)
     data: dict[str, Any] = Field(default_factory=dict)
+
+
+class LogEventData(_Model):
+    """Payload convention for ``type="log"`` events (extra keys allowed for context)."""
+
+    model_config = ConfigDict(extra="allow")
+    level: Literal["debug", "info", "warning", "error"] = "info"
+    source: str = "studio"
+    message: str
 
 
 class ApiError(_Model):
