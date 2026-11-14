@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import uuid
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from typing import Any
@@ -152,6 +153,18 @@ class TrainStream:
         self.val_fraction = val_fraction
         self.seed = seed
         self.stop_event = stop_event
+        self._token = uuid.uuid4().hex
+
+    # ``datasets.IterableDataset.from_generator`` fingerprints the generator by pickling it (dill).
+    # The live objects held here (dataset -> EventBus -> asyncio loops of WebSocket subscribers,
+    # threading events, tokenizer closures) are not picklable and must never be copied. The stream is
+    # only ever consumed in-process (dataloader_num_workers=0), so we expose a small, unique, picklable
+    # state for hashing and refuse real unpickling.
+    def __getstate__(self) -> dict[str, Any]:
+        return {"autotune_train_stream": self._token, "val_fraction": self.val_fraction, "seed": self.seed}
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        raise RuntimeError("TrainStream cannot be unpickled; it must be consumed in the training process")
 
     def _stopped(self) -> bool:
         return bool(self.stop_event is not None and self.stop_event.is_set())
