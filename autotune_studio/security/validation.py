@@ -294,7 +294,8 @@ async def asave_upload_stream(
 
 
 # --------------------------------------------------------------------------- model ids
-HF_REPO_ID_RE = re.compile(r"^[A-Za-z0-9][\w.\-]*/[\w.\-]+$")
+# owner/name, or a legacy bare id such as "gpt2" (ADR: Architect relaxed this during integration).
+HF_REPO_ID_RE = re.compile(r"^(?:[A-Za-z0-9][\w.\-]*/)?[A-Za-z0-9][\w.\-]*$")
 _MAX_MODEL_NAME_LEN = 256
 
 
@@ -332,4 +333,4 @@ def validate_model_name(name: str, policy: PathPolicy | None = None) -> str:
         return str(policy.resolve(name, must_exist=True, expect="dir"))
     if HF_REPO_ID_RE.match(name) and ".." not in name and not name.endswith((".", "-")):
         return name
-    raise ValidationFailed("model_name must look like 'owner/model' (Hugging Face repo id)")
+    raise ValidationFailed("model_name must look like 'owner/model' or 'model' (Hugging Face repo id)")

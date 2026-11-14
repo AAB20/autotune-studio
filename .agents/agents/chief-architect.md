@@ -24,6 +24,8 @@ Also read `AGENTS.md`, `autotune_studio/contracts.py` and `autotune_studio/inter
 - `autotune_studio/interfaces.py`
 - `autotune_studio/errors.py`
 - `autotune_studio/core/events.py`
+- `autotune_studio/core/lifecycle.py`
+- `tests/unit/core/`
 - `autotune_studio/studio.py`
 - `autotune_studio/cli.py`
 - `docs/architecture.md`

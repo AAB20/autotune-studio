@@ -315,7 +315,7 @@ def test_valid_repo_ids(name):
         "org/model\x00",
         "org/" + "x" * 300,
         "org/model;rm -rf",
-        "gpt2",  # repo id must be owner/name
+        "a/b/c",  # too many path segments
         "/abs/path",  # local path without policy
         "C:\\models\\x",
     ],

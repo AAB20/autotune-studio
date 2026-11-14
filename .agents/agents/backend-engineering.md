@@ -17,7 +17,6 @@ Also read `AGENTS.md`, `autotune_studio/contracts.py` and `autotune_studio/inter
 
 ## Owned paths (edit only these)
 - `autotune_studio/api/`
-- `autotune_studio/core/lifecycle.py`
 - `autotune_studio/core/config.py`
 - `tests/unit/api/`
 
