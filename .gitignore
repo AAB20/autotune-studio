@@ -5,8 +5,6 @@ __pycache__/
 .ruff_cache/
 node_modules/
 frontend/dist/
-autotune_studio/web/*
-!autotune_studio/web/.gitkeep
 .autotune/
 outputs/
 *.egg-info/

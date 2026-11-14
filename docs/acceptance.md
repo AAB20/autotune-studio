@@ -3,7 +3,7 @@
 Owner: qa-testing. Last full run: 2026-11-14, Windows 11 dev box, CPython 3.11, torch CPU, **no GPU**.
 
 Command: `PYTHONUTF8=1 .venv/Scripts/python.exe -m pytest -q tests`
-Result: `573 passed, 9 skipped, 1 xfailed` (see `docs/progress-report.md` for the breakdown).
+Result: `575 passed, 9 skipped (2026-11-14 final run, 153.8 s)` (see `docs/progress-report.md` for the breakdown).
 
 Status rules (skill `testing-and-verification`): **PASS** = a test in this repo ran and passed (test ids
 given); **FAIL** = a test demonstrates the defect (strict `xfail` id given); **UNVERIFIED** = cannot be

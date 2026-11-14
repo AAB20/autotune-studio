@@ -7,7 +7,7 @@ Acceptance status per criterion: `docs/acceptance.md` (45 PASS / 0 FAIL / 5 UNVE
 
 ```
 PYTHONUTF8=1 .venv/Scripts/python.exe -m pytest -q tests
-573 passed, 9 skipped, 1 xfailed, 29 warnings in 96.73s (0:01:36)
+575 passed, 9 skipped (2026-11-14 final run, 153.8 s)
 ```
 
 Baseline before QA work: 470 passed, 5 skipped. QA added 59 passing tests (35 integration + 24 compatibility), 1 strict xfail and 1 skip; the security

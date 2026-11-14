@@ -14,7 +14,7 @@ def main(argv: list[str] | None = None) -> int:
 
     lp = sub.add_parser("launch", help="start the backend and open the UI")
     lp.add_argument("--port", type=int, default=None)
-    lp.add_argument("--host", default="127.0.0.1")
+    lp.add_argument("--host", default=None)
     lp.add_argument("--workspace", default=None)
     lp.add_argument("--allow", action="append", default=[], help="extra allowed dataset root (repeatable)")
     lp.add_argument("--tunnel", choices=["colab_proxy", "cloudflared", "local"], default=None)

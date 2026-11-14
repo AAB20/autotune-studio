@@ -22,18 +22,18 @@ T0 Architect: contracts, interfaces, errors, events, ADRs, skills, agents
 | ID | Task | Owner | Status | Evidence |
 |---|---|---|---|---|
 | T0 | Scaffold & contracts | chief-architect | done | `tests/unit/test_agent_config.py`, `test_imports.py` |
-| T1 | Data engine | data-engineering | todo | |
-| T2 | Runtime & launch | runtime-compatibility | todo | |
-| T3 | Security module | security | todo | |
-| T4 | Frontend | frontend-engineering | todo | |
-| T5 | Monitoring | gpu-memory-optimization | todo | |
-| T6 | Training & export | llm-training | todo | |
-| T7 | Backend API | backend-engineering | todo | |
-| T8 | Studio facade | chief-architect | todo | |
-| T9 | QA | qa-testing | todo | |
-| T10 | Security review | security | todo | |
-| T11 | Docs & notebooks | documentation | todo | |
-| T12 | Final review | chief-architect | todo | |
+| T1 | Data engine | data-engineering | done | `tests/unit/data` (74) |
+| T2 | Runtime & launch | runtime-compatibility | done | `tests/unit/runtime` (76) |
+| T3 | Security module | security | done | `tests/unit/security` |
+| T4 | Frontend | frontend-engineering | done | vitest 54, `npm run build` |
+| T5 | Monitoring | gpu-memory-optimization | done | `tests/unit/monitoring` (49) |
+| T6 | Training & export | llm-training | done | `tests/unit/training` (34) |
+| T7 | Backend API | backend-engineering | done | `tests/unit/api` (109) |
+| T8 | Studio facade | chief-architect | done | `tests/unit/core`, browser E2E |
+| T9 | QA | qa-testing | done | `tests/integration`, `tests/compatibility`, `docs/acceptance.md` |
+| T10 | Security review | security | done | `docs/security-review.md` SEC-01..12 |
+| T11 | Docs & notebooks | documentation | done | README, docs/*, notebooks (validated, unexecuted) |
+| T12 | Final review | chief-architect | done | `docs/final-report.md` |
 
 ## Review protocol
 Each agent returns a report (files, skills loaded, tests + output, UNVERIFIED items, out-of-scope requests). The Architect re-runs the agent's tests, reviews the diff against the skills' checklists, then commits the unit (`git commit` per task). Conflicts are resolved by the Architect editing contracts (with an ADR) and re-dispatching.

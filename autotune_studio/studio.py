@@ -447,13 +447,15 @@ class Studio:
         self,
         *,
         port: int | None = None,
-        host: str = "127.0.0.1",
+        host: str | None = None,
         open_browser: bool = True,
         prefer: str | None = None,
         tunnel_timeout: float = 30.0,
     ) -> LaunchInfo:
         """Start the backend in a background thread and expose the UI in a separate browser tab.
 
+        :param port: fixed port; default = ``AUTOTUNE_PORT`` (7860) or the next free port.
+        :param host: bind address; default = ``AUTOTUNE_HOST`` (127.0.0.1).
         :param prefer: force an adapter: ``"colab_proxy"``, ``"cloudflared"`` or ``"local"``.
         :returns: :class:`LaunchInfo`. ``publicly_verified`` is True only after a successful health probe
             through the public URL. The session token is only contained in ``open_url``'s fragment.
@@ -465,8 +467,19 @@ class Studio:
             if open_browser and self._launch_info.open_url:
                 open_in_new_tab(self._launch_info.open_url, self._env)
             return self._launch_info
+        from .api.app import create_app
+        from .core.config import load_settings
+
+        settings = load_settings()  # AUTOTUNE_HOST / AUTOTUNE_PORT / AUTOTUNE_LOG_LEVEL / ...
+        host = host or settings.host
         install_redaction([self.auth.token])
-        server = ServerThread(self.create_app(), host=host, port=port)
+        server = ServerThread(
+            create_app(self, settings),
+            host=host,
+            port=port,
+            preferred_port=settings.port or 7860,
+            log_level=settings.log_level.lower(),
+        )
         server.start()
         if not server.wait_ready(30.0):
             err = server.error
