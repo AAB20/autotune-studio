@@ -10,3 +10,6 @@ Status: accepted (2026-11-14)
 
 ## Verification
 The `hf` backend is verified on CPU with a tiny Llama model. The `unsloth` path can only be verified on a CUDA runtime (Colab/Kaggle notebooks) and is reported UNVERIFIED until run there.
+
+## Data cursor in checkpoints
+`autotune_state.json.data_cursor` is `StreamCursor.to_dict()` plus a `"pass"` key (epoch index over the stream). It advances only when a micro-batch is actually trained, so resume is exact at row level (single process, `dataloader_num_workers=0`).
