@@ -48,10 +48,13 @@ def open_dataset(spec: DatasetSpec, budget: MemoryBudget | None = None,
     records in the sample) or ``ValidationFailed`` (unknown ``text_column``).
     """
     budget = budget or MemoryBudget.from_system()
-    sample_connector = make_connector(spec, min(budget.batch_bytes, budget.sample_bytes))
     try:
+        sample_connector = make_connector(spec, min(budget.batch_bytes, budget.sample_bytes))
         info = discover(sample_connector, spec, budget.sample_bytes)
-    except (pa.ArrowInvalid, pa.ArrowTypeError, UnicodeDecodeError) as exc:
+    except (FileNotFoundError, PermissionError, IsADirectoryError):
+        raise
+    except (pa.ArrowException, UnicodeDecodeError, OSError) as exc:
+        # pyarrow reports corrupt files as ArrowInvalid or as OSError ("Couldn't deserialize thrift").
         # Corrupt/unparseable source (e.g. not really a parquet file): a data problem, not a server error.
         raise DatasetMalformed(f"could not parse dataset: {type(exc).__name__}: {str(exc)[:300]}") from None
     return StreamingDataset(info, make_connector(spec, budget.batch_bytes), budget=budget, events=events)

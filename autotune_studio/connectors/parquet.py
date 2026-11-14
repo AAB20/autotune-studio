@@ -42,7 +42,7 @@ class ParquetConnector(ConnectorBase):
             self.files = [str(f) for f in files]
         else:
             self.files = [self.path]
-        self._rows = [pq.ParquetFile(f).metadata.num_rows for f in self.files]
+        self._rows = [_num_rows(f) for f in self.files]
 
     def total_bytes(self) -> int | None:
         return sum(os.path.getsize(f) for f in self.files)
@@ -95,3 +95,12 @@ class ParquetConnector(ConnectorBase):
                     yield batch, self._cursor(done, bytes=int(total_bytes * done / total_rows))
             finally:
                 pf.close()
+
+
+def _num_rows(path: str) -> int:
+    """Row count from the footer; the file handle is closed immediately (Windows keeps files locked)."""
+    pf = pq.ParquetFile(path)
+    try:
+        return int(pf.metadata.num_rows)
+    finally:
+        pf.close()
