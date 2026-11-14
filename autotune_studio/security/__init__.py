@@ -16,9 +16,10 @@ from .authentication import (
     check_ws_origin,
     cookie_params,
     exchange_token,
+    is_same_origin_request,
     require_auth_dependency,
 )
-from .redaction import RedactingFilter, install_redaction, redact, register_secret
+from .redaction import RedactingFilter, install_redaction, redact, redact_data, register_secret
 from .secrets import get_hf_token
 from .validation import (
     ALLOWED_EXTENSIONS,
@@ -27,6 +28,7 @@ from .validation import (
     asave_upload_stream,
     sanitize_upload_filename,
     save_upload_stream,
+    validate_hf_dataset_name,
     validate_model_name,
 )
 
@@ -48,10 +50,13 @@ __all__ = [
     "exchange_token",
     "get_hf_token",
     "install_redaction",
+    "is_same_origin_request",
     "redact",
+    "redact_data",
     "register_secret",
     "require_auth_dependency",
     "sanitize_upload_filename",
     "save_upload_stream",
+    "validate_hf_dataset_name",
     "validate_model_name",
 ]

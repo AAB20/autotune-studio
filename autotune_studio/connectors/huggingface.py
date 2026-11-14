@@ -12,7 +12,6 @@ The token is read from the ``HF_TOKEN`` environment variable and never logged.
 from __future__ import annotations
 
 import json
-import os
 from collections.abc import Iterator, Sequence
 from typing import Any
 
@@ -72,13 +71,18 @@ class HuggingFaceConnector(ConnectorBase):
         kwargs: dict[str, Any] = {"split": self.split, "streaming": True}
         if self.revision:
             kwargs["revision"] = self.revision
-        token = os.environ.get("HF_TOKEN")
+        from ..security.secrets import get_hf_token
+
+        token = get_hf_token()  # env, Colab userdata or Kaggle secrets; registered for redaction
         if token:
             kwargs["token"] = token
         if self.data_files is not None:
             kwargs["data_files"] = self.data_files
         if self.data_dir is not None:
             kwargs["data_dir"] = self.data_dir
+        if int(datasets.__version__.split(".")[0]) < 4:
+            # datasets < 4 can still execute Hub loading scripts; never allow it (datasets >= 4 removed them).
+            kwargs["trust_remote_code"] = False
         return datasets.load_dataset(self.name, self.config_name, **kwargs)
 
     def _split_info(self) -> Any:

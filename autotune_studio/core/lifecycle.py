@@ -34,6 +34,7 @@ from ..interfaces import (
     TrainingResult,
 )
 from ..monitoring.metrics import EtaEstimator, MetricsStore
+from ..security.redaction import redact
 
 log = logging.getLogger(__name__)
 
@@ -293,10 +294,10 @@ class TrainingLifecycle:
                 publish=False,
             )
         except StudioError as exc:
-            error = f"{exc.code}: {exc.message}"
+            error = redact(f"{exc.code}: {exc.message}")
         except Exception as exc:
             log.exception("training job %s failed", job_id)
-            error = f"{type(exc).__name__}: {exc}"
+            error = redact(f"{type(exc).__name__}: {exc}")
         if error is not None:
             final_state = TrainingState.FAILED
             self._apply_status({"state": final_state, "error": error, "message": "training failed"}, publish=False)

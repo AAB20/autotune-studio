@@ -49,6 +49,7 @@ __all__ = [
     "cookie_params",
     "exchange_token",
     "extract_bearer",
+    "is_same_origin_request",
     "require_auth_dependency",
 ]
 
@@ -318,17 +319,52 @@ def authenticate_connection(
 ) -> bool:
     """Authenticate a Starlette ``Request`` or ``WebSocket``.
 
-    ``check_origin`` defaults to True for WebSocket scopes (ADR-0005) and False for HTTP
-    (SameSite=Strict covers cookie CSRF there).
+    ``check_origin`` defaults to True for WebSocket scopes (ADR-0005). For HTTP the full
+    origin check is off by default (Bearer clients may be cross-origin, e.g. with CORS), but
+    *cookie*-authenticated unsafe requests must pass :func:`is_same_origin_request` (SEC-03).
     """
     is_ws = conn.scope.get("type") == "websocket"
     if check_origin is None:
         check_origin = is_ws
-    if check_origin and not check_ws_origin(
-        conn.headers.get("origin"), conn.headers.get("host"), extra_origins
-    ):
+    headers = conn.headers
+    if check_origin and not check_ws_origin(headers.get("origin"), headers.get("host"), extra_origins):
         return False
-    return authenticate_headers(auth, conn.headers, conn.cookies)
+    bearer = extract_bearer(headers)
+    if bearer is not None and auth.verify_token(bearer):
+        return True  # not an ambient credential: CSRF-immune
+    cookie = conn.cookies.get(COOKIE_NAME) if conn.cookies else None
+    if cookie is None or not auth.verify_cookie(cookie):
+        return False
+    # Cookie auth on unsafe HTTP methods additionally requires a same-origin sender (SEC-03).
+    return is_ws or check_origin or is_same_origin_request(
+        str(conn.scope.get("method", "GET")), headers, extra_origins
+    )
+
+
+#: Methods that never change state; the CSRF origin check is skipped for them.
+SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+
+
+def is_same_origin_request(method: str, headers: Mapping[str, str], extra_origins: Iterable[str] = ()) -> bool:
+    """CSRF defence-in-depth for *cookie*-authenticated HTTP requests (SEC-03).
+
+    ``SameSite=Strict`` already stops cross-site requests from carrying the cookie; this check
+    also rejects same-*site* but cross-*origin* senders (sibling subdomains on a shared parent
+    domain that is not on the Public Suffix List) and old browsers that ignore SameSite.
+
+    * Safe methods (GET/HEAD/OPTIONS) -> allowed.
+    * ``Origin`` present -> must match ``Host`` or an ``extra_origins`` entry (same rules as
+      :func:`check_ws_origin`; ``Origin: null`` is rejected).
+    * ``Origin`` absent -> rejected only if ``Sec-Fetch-Site`` says ``cross-site``/``same-site``
+      (non-browser clients send neither header and stay allowed).
+    """
+    if method.upper() in SAFE_METHODS:
+        return True
+    origin = _get_ci(headers, "origin")
+    if origin is not None and origin.strip():
+        return check_ws_origin(origin, _get_ci(headers, "host"), extra_origins)
+    site = (_get_ci(headers, "sec-fetch-site") or "").strip().lower()
+    return site not in ("cross-site", "same-site")
 
 
 def require_auth_dependency(

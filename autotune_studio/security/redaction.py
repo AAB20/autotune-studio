@@ -30,6 +30,7 @@ __all__ = [
     "RedactingFilter",
     "install_redaction",
     "redact",
+    "redact_data",
     "register_secret",
     "registered_secret_count",
     "uninstall_redaction",
@@ -103,6 +104,26 @@ def redact(text: str, extra_secrets: Iterable[str] = ()) -> str:
     for pattern, repl in _PATTERNS:
         text = pattern.sub(repl, text)
     return text
+
+
+def redact_data(value: Any, _depth: int = 0) -> Any:
+    """Recursively redact every string inside a JSON-like value (dict/list/tuple/str).
+
+    Intended for event payloads (``EventBus.publish`` data -> WebSocket / replay buffer) and
+    other API-visible text that does not go through logging (SEC-04). Keys are left untouched;
+    non-string scalars are returned as-is; nesting deeper than 32 levels is returned unchanged.
+    """
+    if isinstance(value, str):
+        return redact(value)
+    if _depth > 32:
+        return value
+    if isinstance(value, dict):
+        return {k: redact_data(v, _depth + 1) for k, v in value.items()}
+    if isinstance(value, list):
+        return [redact_data(v, _depth + 1) for v in value]
+    if isinstance(value, tuple):
+        return tuple(redact_data(v, _depth + 1) for v in value)
+    return value
 
 
 _PLAIN_TYPES = (int, float, bool, type(None), bytes)

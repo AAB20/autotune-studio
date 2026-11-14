@@ -196,7 +196,13 @@ class Studio:
         """Like :meth:`load_dataset` but takes a :class:`DatasetSpec`."""
         from .data_engine import open_dataset
 
-        if spec.source != DatasetSource.HUGGINGFACE:
+        if spec.source == DatasetSource.HUGGINGFACE:
+            # SEC-01: a "name" that is a local path or a builder name (csv/json/text/...) would make
+            # datasets.load_dataset read local files outside the allowed roots.
+            from .security.validation import validate_hf_dataset_name
+
+            spec = spec.model_copy(update={"name": validate_hf_dataset_name(spec.name or "")})
+        else:
             assert spec.path is not None
             resolved = self.path_policy.resolve(spec.path, must_exist=True, kinds={_FILE_KINDS[spec.source]})
             spec = spec.model_copy(update={"path": str(resolved)})

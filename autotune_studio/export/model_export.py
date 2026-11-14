@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 import os
+import secrets
 import shutil
 from pathlib import Path
 from typing import Any
@@ -103,7 +104,8 @@ def _export_merged_unsloth(src: Path, tmp: Path, model_cfg: ModelConfig) -> None
     from unsloth import FastLanguageModel
 
     model, tokenizer = FastLanguageModel.from_pretrained(model_name=str(src), max_seq_length=model_cfg.max_seq_length,
-                                                         dtype=None, load_in_4bit=False)
+                                                         dtype=None, load_in_4bit=False,
+                                                         trust_remote_code=False)
     model.save_pretrained_merged(str(tmp), tokenizer, save_method="merged_16bit")
 
 
@@ -125,10 +127,10 @@ def export_model(request: ExportRequest, checkpoint: CheckpointInfo, model_cfg: 
         backend: Any = load_checkpoint_state(src).get("backend")
     except Exception:  # noqa: BLE001 - provenance is optional for export
         backend = None
-    tmp = dest.with_name(dest.name + ".partial")
-    if tmp.exists():
-        shutil.rmtree(tmp)
-    tmp.mkdir(parents=True)
+    # SEC-06: a unique temp dir next to the destination; never delete a directory we did not create.
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.parent / f".{dest.name}.{secrets.token_hex(6)}.partial"
+    tmp.mkdir()
     try:
         if request.format == "lora_adapter":
             _export_adapter(src, tmp)

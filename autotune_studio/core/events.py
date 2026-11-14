@@ -16,6 +16,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from ..contracts import Event
+from ..security.redaction import redact_data
 
 
 class EventBus:
@@ -32,7 +33,8 @@ class EventBus:
 
     def publish(self, type: str, data: dict[str, Any] | None = None) -> Event:
         with self._lock:
-            ev = Event(seq=next(self._seq), type=type, data=data or {})  # type: ignore[arg-type]
+            # SEC-04: event payloads reach the browser, the replay buffer and session history.
+            ev = Event(seq=next(self._seq), type=type, data=redact_data(data or {}))  # type: ignore[arg-type]
             self._buffer.append(ev)
             subs = list(self._subscribers)
         for loop, q in subs:

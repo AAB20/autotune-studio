@@ -30,11 +30,13 @@ __all__ = [
     "ALLOWED_EXTENSIONS",
     "ALL_ALLOWED_EXTENSIONS",
     "DIRECTORY_KINDS",
+    "PACKAGED_BUILDERS",
     "PathPolicy",
     "UploadLimits",
     "asave_upload_stream",
     "sanitize_upload_filename",
     "save_upload_stream",
+    "validate_hf_dataset_name",
     "validate_model_name",
 ]
 
@@ -332,5 +334,68 @@ def validate_model_name(name: str, policy: PathPolicy | None = None) -> str:
             raise ValidationFailed("local model paths are not allowed here")
         return str(policy.resolve(name, must_exist=True, expect="dir"))
     if HF_REPO_ID_RE.match(name) and ".." not in name and not name.endswith((".", "-")):
+        # SEC-05: transformers / unsloth check ``os.path.isdir(name)`` relative to the process cwd
+        # *before* contacting the Hub, so a repo-id-shaped name can silently select a local
+        # directory. Pin such names to the absolute directory, or refuse it if outside the roots.
+        if os.path.exists(name):
+            if policy is None:
+                raise ValidationFailed("model_name matches a local path; local model paths are not allowed here")
+            return str(policy.resolve(os.path.abspath(name), must_exist=True, expect="dir"))
         return name
     raise ValidationFailed("model_name must look like 'owner/model' or 'model' (Hugging Face repo id)")
+
+
+# --------------------------------------------------------------------------- HF dataset ids
+#: ``datasets`` packaged builders. ``load_dataset("<builder>")`` without ``data_files`` reads
+#: every matching file under the process cwd (recursively), bypassing :class:`PathPolicy`.
+#: Static fallback; the live list from ``datasets.packaged_modules`` is merged in when importable.
+PACKAGED_BUILDERS: frozenset[str] = frozenset({
+    "arrow", "audiofolder", "conll", "csv", "eval", "fasta", "fastq", "genbank", "harbor", "hdf5",
+    "iceberg", "imagefolder", "json", "lance", "meshfolder", "mmcif", "niftifolder", "pandas", "parquet",
+    "pdb", "pdffolder", "spark", "sql", "text", "tsfile", "videofolder", "vortex", "webdataset", "xml",
+    "generator", "cache",
+})
+
+
+def _packaged_builders() -> frozenset[str]:
+    try:  # cheap: the module only holds a dict; datasets may already be imported anyway
+        from datasets.packaged_modules import _PACKAGED_DATASETS_MODULES  # type: ignore[import-not-found]
+
+        return PACKAGED_BUILDERS | frozenset(k.lower() for k in _PACKAGED_DATASETS_MODULES)
+    except Exception:  # noqa: BLE001 - datasets not installed / layout changed
+        return PACKAGED_BUILDERS
+
+
+def validate_hf_dataset_name(name: str) -> str:
+    """Validate a Hugging Face *Hub* dataset id for ``datasets.load_dataset`` (SEC-01).
+
+    ``datasets.load_dataset(name)`` treats ``name`` as a local directory/file if it exists
+    (absolute, or relative to the process cwd) and treats packaged builder names (``csv``,
+    ``json``, ``text``, ...) as "read files under the cwd". Either way local files outside the
+    allowed roots would be streamed to the UI. Accepted: ``owner/name`` or a bare legacy id that
+    is not a packaged builder and does not exist on the local filesystem. Local files must use
+    the csv/json/jsonl/parquet sources, which go through :class:`PathPolicy`.
+    """
+    if not isinstance(name, str):
+        raise ValidationFailed("dataset name must be a string")
+    if "\x00" in name:
+        raise ValidationFailed("dataset name contains a NUL byte")
+    name = name.strip()
+    if not name:
+        raise ValidationFailed("dataset name is empty")
+    if len(name) > _MAX_MODEL_NAME_LEN:
+        raise ValidationFailed("dataset name is too long")
+    low = name.lower()
+    if "://" in name or low.startswith(("http:", "https:", "ftp:", "file:", "hf:", "s3:", "gs:", "git@")):
+        raise ValidationFailed("dataset name must be a Hugging Face dataset id, not a URL")
+    if _looks_like_path(name):
+        raise ForbiddenPath("local paths are not accepted as Hugging Face dataset ids; use a file source")
+    if not (HF_REPO_ID_RE.match(name) and ".." not in name and not name.endswith((".", "-"))):
+        raise ValidationFailed("dataset name must look like 'owner/dataset' (Hugging Face dataset id)")
+    if low in _packaged_builders():
+        raise ValidationFailed(
+            f"'{name}' is a local file builder, not a Hub dataset; use the csv/json/jsonl/parquet source"
+        )
+    if os.path.lexists(name):
+        raise ForbiddenPath("dataset name matches a local path; use a file source")
+    return name
