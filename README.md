@@ -44,7 +44,9 @@ Background: [ADR-0003](docs/decisions/ADR-0003-zero-row-engine.md).
   data cursor is stored too, so a resumed run continues at the exact row.
 - On CUDA out-of-memory the micro-batch is halved and gradient accumulation raised, so the
   effective batch is kept (rounded up). Training then resumes from the last checkpoint.
-- Export a LoRA adapter, or a merged 16-bit model.
+- Export a LoRA adapter, or a merged 16-bit model, and optionally push it to the Hugging Face Hub.
+  Enter your Hugging Face username and a write token on the UI's **Settings** page after launch;
+  the token is verified with the Hub and kept in memory only (never stored or shown again).
 - Security: a per-launch session token in the URL fragment, an HttpOnly cookie, every API/WS route
   authenticated, path allowlists, `trust_remote_code` always `False` and secrets redacted from logs.
 

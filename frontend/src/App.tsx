@@ -12,6 +12,7 @@ import { ModelPage } from "./pages/Model";
 import { TrainingPage } from "./pages/Training";
 import { MonitorPage } from "./pages/Monitor";
 import { CheckpointsPage } from "./pages/Checkpoints";
+import { SettingsPage } from "./pages/Settings";
 import { bootstrapAuth, checkSession, loginWithToken, type AuthState } from "./services/auth";
 import { isApiRequestError } from "./services/api";
 import { qk } from "./hooks/queries";
@@ -43,6 +44,7 @@ export function AppRoutes() {
         <Route path="training" element={<TrainingPage />} />
         <Route path="monitor" element={<MonitorPage />} />
         <Route path="checkpoints" element={<CheckpointsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

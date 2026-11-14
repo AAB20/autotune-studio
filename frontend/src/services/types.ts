@@ -99,6 +99,12 @@ export interface ExportRequest {
   checkpoint_id?: string | null;
   format?: "lora_adapter" | "merged_16bit";
   output_dir?: string | null;
+  /** Upload the export to <hf username>/<hub_repo_name> (ADR-0007). */
+  push_to_hub?: boolean;
+  /** Hub repo name (without owner); default derived. */
+  hub_repo_name?: string | null;
+  /** Create the Hub repository as private. */
+  hub_private?: boolean;
 }
 
 export interface ExportResult {
@@ -106,6 +112,8 @@ export interface ExportResult {
   format: "lora_adapter" | "merged_16bit";
   files: Array<string>;
   size_bytes: number;
+  hub_repo_id?: string | null;
+  hub_url?: string | null;
 }
 
 export interface GPUInfo {
@@ -115,6 +123,21 @@ export interface GPUInfo {
   free_vram_bytes?: number | null;
   utilization_pct?: number | null;
   compute_capability?: string | null;
+}
+
+export interface HFCredentialsRequest {
+  username: string;
+  token: string;
+}
+
+export interface HFCredentialsStatus {
+  configured?: boolean;
+  username?: string | null;
+  verified?: boolean;
+  /** None when the token role cannot be determined. */
+  can_write?: boolean | null;
+  token_role?: string | null;
+  message?: string;
 }
 
 export interface HardwareInfo {
@@ -263,6 +286,7 @@ export const ErrorCode = {
   FORBIDDEN_PATH: "forbidden_path",
   UNAUTHORIZED: "unauthorized",
   RATE_LIMITED: "rate_limited",
+  HUB_ERROR: "hub_error",
   DEPENDENCY_MISSING: "dependency_missing",
   DATASET_EMPTY: "dataset_empty",
   DATASET_MALFORMED: "dataset_malformed",

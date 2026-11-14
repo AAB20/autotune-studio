@@ -84,3 +84,11 @@ Large merged exports through the UI can exceed Cloudflare's roughly 100 s respon
 The launch link contains the session token. **Clear all outputs before *Save Version***, because a
 saved version stores outputs, and before sharing the notebook. Call `studio.shutdown()` when you
 are done.
+
+## Pushing your model to the Hugging Face Hub
+
+After `studio.launch()`, open **Settings** in the UI and enter your Hugging Face username (or an
+organisation you belong to) and an access token with **Write** permission
+(https://huggingface.co/settings/tokens). The token is verified with the Hub and kept in the
+server's memory for this session only. Then, on **Checkpoints > Export**, switch on
+*Push to Hugging Face Hub*, choose a repository name and export. (UNVERIFIED against the real Hub.)

@@ -68,3 +68,9 @@ class RateLimited(StudioError):
             "too many failed authentication attempts", {"retry_after_seconds": round(retry_after, 1)}
         )
         self.retry_after = retry_after
+
+
+class HubError(StudioError):
+    """The Hugging Face Hub rejected or failed a request (bad token, no write access, network)."""
+
+    code, http_status = ErrorCode.HUB_ERROR, 502

@@ -110,3 +110,11 @@ The backend keeps running even if every adapter fails. See
 - "Reconnecting" badge: the WebSocket reconnects with backoff and replays missed events. Check
   that the kernel is still alive.
 - Use the Python API instead. Every UI action has a `Studio` method ([api.md](api.md)).
+
+## Pushing your model to the Hugging Face Hub
+
+After `studio.launch()`, open **Settings** in the UI and enter your Hugging Face username (or an
+organisation you belong to) and an access token with **Write** permission
+(https://huggingface.co/settings/tokens). The token is verified with the Hub and kept in the
+server's memory for this session only. Then, on **Checkpoints > Export**, switch on
+*Push to Hugging Face Hub*, choose a repository name and export. (UNVERIFIED against the real Hub.)

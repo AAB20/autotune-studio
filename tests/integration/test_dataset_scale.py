@@ -89,6 +89,14 @@ def test_scan_large_file_exact_count_stable_checksum_bounded_rss(
     assert size >= target
     file_hash = sha256_file(path)
 
+    # Warm up the same code path on a small file first: one-time costs (imports, pyarrow pools, the first
+    # Arrow->Python conversion) are not dataset-proportional and otherwise made this test order-dependent
+    # (it failed when run alone, passed after other tests had warmed the process).
+    warm = tmp_path / "data" / f"warm.{fmt}"
+    writer(warm, 2 * MiB)
+    warm_info = studio.load_dataset(fmt, path=str(warm))
+    studio.scan_dataset(warm_info.dataset_id)
+
     with PeakRSS() as mem:
         info = studio.load_dataset(fmt, path=str(path))  # no row count supplied anywhere
         assert info.cardinality.rows is None and not info.cardinality.exact
@@ -101,7 +109,7 @@ def test_scan_large_file_exact_count_stable_checksum_bounded_rss(
     assert s1.checksum
     after = studio.get_dataset(info.dataset_id).info.cardinality
     assert after.rows == n_rows and after.exact and after.method == "scan"
-    assert studio.list_datasets()[-1].cardinality.rows == n_rows
+    assert [d for d in studio.list_datasets() if d.dataset_id == info.dataset_id][0].cardinality.rows == n_rows
 
     # Memory: bounded, not proportional to the file size.
     msg = f"RSS grew {mem.growth / MiB:.0f} MiB for a {size / MiB:.0f} MiB {fmt} file"

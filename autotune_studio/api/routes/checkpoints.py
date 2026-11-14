@@ -44,5 +44,8 @@ async def resume_checkpoint(
 async def export_model(req: ExportRequest, studio=Depends(get_studio)) -> ExportResult:
     """Export the LoRA adapter or a merged 16-bit model (``output_dir`` must be inside the allowed roots)."""
     return await run_in_threadpool(
-        lambda: studio.export_model(req.checkpoint_id, format=req.format, output_dir=req.output_dir)
+        lambda: studio.export_model(
+            req.checkpoint_id, format=req.format, output_dir=req.output_dir,
+            push_to_hub=req.push_to_hub, hub_repo_name=req.hub_repo_name, hub_private=req.hub_private,
+        )
     )

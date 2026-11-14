@@ -14,6 +14,8 @@ import type {
   DatasetSpec,
   EnvironmentInfo,
   ExportRequest,
+  HFCredentialsRequest,
+  HFCredentialsStatus,
   ExportResult,
   HardwareInfo,
   MetricPoint,
@@ -226,4 +228,10 @@ export const api = {
   resumeCheckpoint: (id: string) =>
     request<TrainingStatus>(`api/checkpoints/${enc(id)}/resume`, { method: "POST" }),
   exportModel: (req: ExportRequest) => request<ExportResult>("api/export", { method: "POST", json: req }),
+
+  // --- Hugging Face (token is write-only: sent once, never returned)
+  hfCredentials: () => request<HFCredentialsStatus>("api/hf/credentials"),
+  putHfCredentials: (body: HFCredentialsRequest) =>
+    request<HFCredentialsStatus>("api/hf/credentials", { method: "PUT", json: body }),
+  deleteHfCredentials: () => request<HFCredentialsStatus>("api/hf/credentials", { method: "DELETE" }),
 };

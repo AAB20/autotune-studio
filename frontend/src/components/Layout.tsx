@@ -1,6 +1,6 @@
 /** App shell: sidebar navigation + top bar (runtime, GPU, connection) + routed content. */
 import { NavLink, Outlet } from "react-router";
-import { Activity, Boxes, Cpu, Database, Gauge, HardDriveDownload, SlidersHorizontal } from "lucide-react";
+import { Activity, Boxes, Cpu, Database, Gauge, HardDriveDownload, Settings, SlidersHorizontal } from "lucide-react";
 import { ConnectionBadge, RuntimeBadge, Toaster, TrainingStateBadge } from "./common";
 import { Badge } from "./ui/display";
 import { cn } from "./ui/cn";
@@ -14,6 +14,7 @@ const NAV = [
   { to: "/training", label: "Training", icon: SlidersHorizontal },
   { to: "/monitor", label: "Monitor", icon: Activity },
   { to: "/checkpoints", label: "Checkpoints", icon: HardDriveDownload },
+  { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 function Logo() {

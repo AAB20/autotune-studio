@@ -81,7 +81,12 @@ which carries `.code` and `.http_status` (see [error codes](#error-codes)). Pyda
 | `save_checkpoint(timeout=300.0)` | `CheckpointInfo` | Saved at the next step boundary. `Conflict` if no job is running. |
 | `list_checkpoints()` | `list[CheckpointInfo]` | All checkpoints under `runs/`, oldest first. |
 | `resume_from_checkpoint(checkpoint_id, dataset_id=None)` | `TrainingStatus` | New job. Model and training config are restored from the checkpoint's `autotune_state.json`. |
-| `export_model(checkpoint_id=None, format="lora_adapter", output_dir=None)` | `ExportResult` (`path`, `format`, `files`, `size_bytes`) | `format`: `lora_adapter` or `merged_16bit`. Uses the latest checkpoint by default. Default destination: `<workspace>/exports/<checkpoint_id>-<suffix>`. `Conflict` while training runs, unless you pass an explicit `checkpoint_id`. `NotFound` if there are no checkpoints. |
+| `export_model(checkpoint_id=None, format="lora_adapter", output_dir=None, *, push_to_hub=False, hub_repo_name=None, hub_private=True)` | `ExportResult` (`path`, `format`, `files`, `size_bytes`, `hub_repo_id`, `hub_url`) | `format`: `lora_adapter` or `merged_16bit`. Uses the latest checkpoint by default. Default destination: `<workspace>/exports/<checkpoint_id>-<suffix>`. `Conflict` while training runs, unless you pass an explicit `checkpoint_id`. `NotFound` if there are no checkpoints. |
+
+| `set_hf_credentials(username, token)` | `HFCredentialsStatus` | Verifies the token with `HfApi.whoami`; `username` must be the token's user or one of its organisations. Kept in memory only. `ValidationFailed`, `HubError` (`hub_error`, 502). |
+| `hf_credentials_status()` / `clear_hf_credentials()` | `HFCredentialsStatus` | Never includes the token. |
+
+With `push_to_hub=True` the exported folder is uploaded to `<username>/<hub_repo_name or automatic name>` (repo created if needed, private by default; `autotune_state.json` is not uploaded). See ADR-0007.
 
 ### Web UI
 
@@ -140,7 +145,10 @@ are no `/docs`, `/redoc` or `/openapi.json` routes.
 | `GET /api/checkpoints` | | `list[CheckpointInfo]` | |
 | `POST /api/checkpoints` | | `CheckpointInfo` | Saves now. Waits at most 90 s, then returns `409`. |
 | `POST /api/checkpoints/{id}/resume` | `{"dataset_id"?: str}` (optional) | `TrainingStatus` | |
-| `POST /api/export` | `ExportRequest` (`checkpoint_id?`, `format`, `output_dir?`) | `ExportResult` | `output_dir` must be inside an allowed root. |
+| `POST /api/export` | `ExportRequest` (`checkpoint_id?`, `format`, `output_dir?`, `push_to_hub`, `hub_repo_name?`, `hub_private`) | `ExportResult` (+ `hub_repo_id`, `hub_url`) | `output_dir` must be inside an allowed root. Push needs saved HF credentials (422 otherwise; `hub_error` 502 on Hub failures). |
+| `GET /api/hf/credentials` | | `HFCredentialsStatus` | `configured`, `username`, `verified`, `can_write`, `token_role`. Never the token. |
+| `PUT /api/hf/credentials` | `HFCredentialsRequest` (`username`, `token`) | `HFCredentialsStatus` | Verifies with the Hub; token kept in server memory only. |
+| `DELETE /api/hf/credentials` | | `HFCredentialsStatus` | Forget the credentials. |
 | `GET /{path}` | | SPA `index.html` / assets | A "UI not built" page if `autotune_studio/web/` is empty. |
 
 Example with Bearer auth (the `TOKEN` value is the `#token=` part of the launch link):

@@ -10,6 +10,7 @@ Everything below is implemented, but could not be run on the Windows CPU dev box
 | Area | Item | How to verify |
 |---|---|---|
 | Colab | Install, launch via the kernel proxy, the UI in a new tab, Drive persistence / runtime recycle (R1, L7) | Run `notebooks/colab.ipynb` top to bottom on a T4 runtime |
+| Hub push | `PUT /api/hf/credentials` against the real Hub and pushing an export (tested with a faked `HfApi` only) | Enter a write token on the Settings page and export with *Push to Hugging Face Hub* |
 | Kaggle | Install, cloudflared tunnel with `publicly_verified=True` (R2) | Run `notebooks/kaggle.ipynb` with Internet ON |
 | Notebooks | `notebooks/colab.ipynb` and `notebooks/kaggle.ipynb` **have never been executed**. They are validated only as JSON / nbformat, and their code cells parse | Execute them on each platform |
 | GPU | QLoRA 4-bit, the Unsloth backend (T2), real CUDA OOM recovery (T10), VRAM / NVML monitoring (T11, R5), merged export of 4-bit / Unsloth models (T8) | Colab T4 with `method="qlora"`, plus an oversized batch |
@@ -40,8 +41,9 @@ Everything below is implemented, but could not be run on the Windows CPU dev box
   Delete them yourself if needed. Failed uploads are deleted (SEC-12).
 - **Non-file multipart fields are not size-capped.** They are drained, not buffered, and need
   authentication (SEC-10).
-- **`AUTOTUNE_HOST`, `AUTOTUNE_PORT` and `AUTOTUNE_LOG_LEVEL` are parsed but not used** by
-  `Studio.launch()`. Use `launch(host=, port=)` / the CLI flags.
+- **Hugging Face credentials last for the session only.** They are kept in memory (by design) and must
+  be entered again on the Settings page after a kernel restart. The UI token is used only for pushing;
+  gated downloads use the `HF_TOKEN` notebook secret.
 
 ## Networking
 

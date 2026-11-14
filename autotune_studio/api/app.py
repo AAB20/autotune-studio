@@ -49,7 +49,7 @@ from ..core.config import StudioSettings, load_settings
 from ..security import FailedAuthLimiter
 from .deps import require_auth
 from .errors import InternalErrorMiddleware, install_error_handlers
-from .routes import auth, checkpoints, datasets, models, system, training
+from .routes import auth, checkpoints, datasets, hub, models, system, training
 from .static import DEFAULT_WEB_DIR, SecurityHeadersMiddleware, spa_handler
 from .websocket import router as ws_router
 
@@ -90,7 +90,7 @@ def create_app(
 
     app.include_router(auth.router, prefix="/api")
     protected = [Depends(require_auth)]
-    for module in (system, datasets, models, training, checkpoints):
+    for module in (system, datasets, models, training, checkpoints, hub):
         app.include_router(module.router, prefix="/api", dependencies=protected)
     app.include_router(ws_router)
 

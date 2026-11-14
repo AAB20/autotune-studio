@@ -20,12 +20,14 @@ export const qk = {
   trainingStatus: ["training", "status"] as const,
   metrics: ["training", "metrics"] as const,
   checkpoints: ["checkpoints"] as const,
+  hfCredentials: ["hf", "credentials"] as const,
 };
 
 export const useEnv = () => useQuery({ queryKey: qk.env, queryFn: api.env, staleTime: 60_000 });
 export const useHardware = () => useQuery({ queryKey: qk.hardware, queryFn: api.hardware, staleTime: 60_000 });
 export const useSessions = () => useQuery({ queryKey: qk.sessions, queryFn: api.sessions });
 export const useDatasets = () => useQuery({ queryKey: qk.datasets, queryFn: api.listDatasets });
+export const useHfCredentials = () => useQuery({ queryKey: qk.hfCredentials, queryFn: api.hfCredentials });
 export const useCheckpoints = () => useQuery({ queryKey: qk.checkpoints, queryFn: api.checkpoints });
 export const useSuggestedModels = () =>
   useQuery({ queryKey: qk.suggested, queryFn: api.suggestedModels, staleTime: Infinity });

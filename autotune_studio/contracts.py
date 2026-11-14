@@ -284,6 +284,9 @@ class ExportRequest(_Model):
     checkpoint_id: str | None = Field(None, description="None = latest checkpoint.")
     format: ExportFormat = "lora_adapter"
     output_dir: str | None = None
+    push_to_hub: bool = Field(False, description="Upload the export to <hf username>/<hub_repo_name> (ADR-0007).")
+    hub_repo_name: str | None = Field(None, description="Hub repo name (without owner); default derived.")
+    hub_private: bool = Field(True, description="Create the Hub repository as private.")
 
 
 class ExportResult(_Model):
@@ -291,6 +294,24 @@ class ExportResult(_Model):
     format: ExportFormat
     files: list[str]
     size_bytes: int
+    hub_repo_id: str | None = None
+    hub_url: str | None = None
+
+
+class HFCredentialsRequest(_Model):
+    """Hugging Face login entered in the UI. The token is kept in memory only and never returned."""
+
+    username: str = Field(..., min_length=1, max_length=96)
+    token: str = Field(..., min_length=8, max_length=512, json_schema_extra={"format": "password"})
+
+
+class HFCredentialsStatus(_Model):
+    configured: bool = False
+    username: str | None = None
+    verified: bool = False
+    can_write: bool | None = Field(None, description="None when the token role cannot be determined.")
+    token_role: str | None = None
+    message: str = ""
 
 
 class SessionSummary(_Model):
@@ -341,6 +362,7 @@ class ErrorCode:
     FORBIDDEN_PATH = "forbidden_path"
     UNAUTHORIZED = "unauthorized"
     RATE_LIMITED = "rate_limited"
+    HUB_ERROR = "hub_error"
     DEPENDENCY_MISSING = "dependency_missing"
     DATASET_EMPTY = "dataset_empty"
     DATASET_MALFORMED = "dataset_malformed"

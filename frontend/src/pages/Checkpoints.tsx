@@ -1,16 +1,16 @@
 /** Checkpoint history, save-now, resume, and export (LoRA adapter / merged 16-bit). */
 import { useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
-import { Download, HardDriveDownload, Play, Save } from "lucide-react";
+import { Link, useNavigate } from "react-router";
+import { Download, ExternalLink, HardDriveDownload, Play, Save } from "lucide-react";
 import { Card, CardBody, CardHeader, Stat } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Field, Input } from "../components/ui/form";
+import { Field, Input, Switch } from "../components/ui/form";
 import { Select } from "../components/ui/select";
 import { Badge, EmptyState, Table, Td, Th } from "../components/ui/display";
 import { ErrorNotice, PageHeader } from "../components/common";
-import { qk, useCheckpoints, useTrainingStatus } from "../hooks/queries";
-import { api } from "../services/api";
+import { qk, useCheckpoints, useHfCredentials, useTrainingStatus } from "../hooks/queries";
+import { api, fieldErrors } from "../services/api";
 import { formatBytes, formatNumber, formatTimestamp } from "../services/format";
 import { useUiStore } from "../services/uiStore";
 import type { ExportResult } from "../services/types";
@@ -25,11 +25,24 @@ function ExportPanel() {
   const [format, setFormat] = useState<ExportFormat>("lora_adapter");
   const [outputDir, setOutputDir] = useState("");
   const [result, setResult] = useState<ExportResult | null>(null);
+  const hf = useHfCredentials();
+  const hfReady = Boolean(hf.data?.configured) && hf.data?.can_write !== false;
+  const [push, setPush] = useState(false);
+  const [repoName, setRepoName] = useState("");
+  const [hubPrivate, setHubPrivate] = useState(true);
   const exp = useMutation({
     mutationFn: () =>
-      api.exportModel({ checkpoint_id: ckpt === LATEST ? null : ckpt, format, output_dir: outputDir.trim() || null }),
+      api.exportModel({
+        checkpoint_id: ckpt === LATEST ? null : ckpt,
+        format,
+        output_dir: outputDir.trim() || null,
+        push_to_hub: push && hfReady,
+        hub_repo_name: push && hfReady ? repoName.trim() || null : null,
+        hub_private: hubPrivate,
+      }),
     onSuccess: setResult,
   });
+  const errs = fieldErrors(exp.error);
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setResult(null);
@@ -72,10 +85,40 @@ function ExportPanel() {
           <Field label="Output directory (optional)" hint="Defaults to the workspace export folder.">
             {(p) => <Input {...p} value={outputDir} onChange={(e) => setOutputDir(e.target.value)} spellCheck={false} />}
           </Field>
-          <ErrorNotice error={exp.error} title="Export failed" />
+          <div className="rounded-md border border-edge bg-sunken p-3">
+            <Switch
+              checked={push && hfReady}
+              onCheckedChange={setPush}
+              disabled={!hfReady}
+              label="Push to Hugging Face Hub"
+              description={
+                hfReady
+                  ? `Upload to ${hf.data?.username}/<repository> after exporting.`
+                  : hf.data?.configured
+                    ? "The saved token is read-only. Add a write token in Settings."
+                    : "Connect your Hugging Face account in Settings first."
+              }
+            />
+            {!hfReady && (
+              <Link to="/settings" className="mt-2 inline-block text-xs text-accent hover:underline">
+                Open Settings
+              </Link>
+            )}
+            {push && hfReady && (
+              <div className="mt-3 flex flex-col gap-3">
+                <Field label="Repository name" error={errs.hub_repo_name} hint="Leave empty for an automatic name.">
+                  {(p) => (
+                    <Input {...p} value={repoName} onChange={(e) => setRepoName(e.target.value)} placeholder="my-finetuned-model" spellCheck={false} />
+                  )}
+                </Field>
+                <Switch checked={hubPrivate} onCheckedChange={setHubPrivate} label="Private repository" />
+              </div>
+            )}
+          </div>
+          <ErrorNotice error={exp.error && Object.keys(errs).length === 0 ? exp.error : null} title="Export failed" />
           <div>
             <Button type="submit" variant="primary" loading={exp.isPending}>
-              <Download aria-hidden /> Export
+              <Download aria-hidden /> {push && hfReady ? "Export & push" : "Export"}
             </Button>
           </div>
         </form>
@@ -85,6 +128,17 @@ function ExportPanel() {
               <Stat label="Format" value={result.format} />
               <Stat label="Size" value={formatBytes(result.size_bytes)} />
               <Stat label="Path" value={<span title={result.path}>{result.path}</span>} className="col-span-2" />
+              {result.hub_url && (
+                <Stat
+                  label="Hugging Face Hub"
+                  className="col-span-2"
+                  value={
+                    <a href={result.hub_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline">
+                      {result.hub_repo_id} <ExternalLink className="size-3" aria-hidden />
+                    </a>
+                  }
+                />
+              )}
             </dl>
             <p className="mt-3 text-[11px] uppercase tracking-wider text-faint">Files ({result.files.length})</p>
             <ul className="mt-1 max-h-40 overflow-y-auto font-mono text-[11px] text-muted">

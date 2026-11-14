@@ -35,6 +35,7 @@ from .contracts import (
     ExportRequest,
     ExportResult,
     HardwareInfo,
+    HFCredentialsStatus,
     LaunchInfo,
     MetricPoint,
     ModelConfig,
@@ -130,6 +131,7 @@ class Studio:
         self._server = None
         self._exposure = None
         self._launch_info: LaunchInfo | None = None
+        self._hf_credentials = None  # export.hub.HFCredentials, memory only (ADR-0007)
 
     # ------------------------------------------------------------------ runtime
     @property
@@ -409,14 +411,61 @@ class Studio:
             self.training_config = TrainingConfig.model_validate(tc)
         return self.start_training(dataset_id, resume_from=ckpt)
 
+    # ------------------------------------------------------------------ Hugging Face Hub (ADR-0007)
+    def set_hf_credentials(self, username: str, token: str) -> HFCredentialsStatus:
+        """Verify a Hugging Face username + access token and keep them in memory for pushing exports.
+
+        The token is never written to disk, returned by the API, or logged (it is registered for redaction).
+        :raises ValidationFailed: bad format, or the token does not belong to ``username`` / its organisations.
+        :raises HubError: the Hub rejected the token or could not be reached.
+        """
+        from .export.hub import verify_credentials
+
+        creds = verify_credentials(username, token)
+        with self._lock:
+            self._hf_credentials = creds
+        return creds.status()
+
+    def hf_credentials_status(self) -> HFCredentialsStatus:
+        """Whether Hugging Face credentials are configured (never includes the token)."""
+        with self._lock:
+            creds = self._hf_credentials
+        if creds is None:
+            return HFCredentialsStatus(message="not configured")
+        return creds.status()
+
+    def clear_hf_credentials(self) -> HFCredentialsStatus:
+        """Forget the in-memory Hugging Face credentials."""
+        with self._lock:
+            self._hf_credentials = None
+        return HFCredentialsStatus(message="not configured")
+
     def export_model(
         self,
         checkpoint_id: str | None = None,
         format: ExportFormat = "lora_adapter",
         output_dir: str | None = None,
+        *,
+        push_to_hub: bool = False,
+        hub_repo_name: str | None = None,
+        hub_private: bool = True,
     ) -> ExportResult:
-        """Export the LoRA adapter (default) or a merged 16-bit model from a checkpoint (latest by default)."""
+        """Export the LoRA adapter (default) or a merged 16-bit model from a checkpoint (latest by default).
+
+        With ``push_to_hub=True`` the exported folder is then uploaded to ``<hf username>/<hub_repo_name>``
+        using the credentials from :meth:`set_hf_credentials` (the local export is kept either way).
+        """
         from .export.model_export import export_model
+
+        creds = None
+        if push_to_hub:
+            with self._lock:
+                creds = self._hf_credentials
+            if creds is None:
+                raise ValidationFailed(
+                    "set your Hugging Face username and access token first (Settings page)",
+                    {"field": "push_to_hub"},
+                )
 
         if self.lifecycle.is_active and checkpoint_id is None:
             raise Conflict("training is running; stop it or pass an explicit checkpoint_id")
@@ -433,6 +482,15 @@ class Studio:
                 raise ValidationFailed("model configuration unknown for this checkpoint")
             model_cfg = ModelConfig.model_validate(mc)
         result = export_model(req, ckpt, model_cfg, self.workspace)
+        if creds is not None:
+            from .export.hub import default_repo_name, push_folder
+
+            name = (hub_repo_name or "").strip() or default_repo_name(ckpt.checkpoint_id, format)
+            self.events.publish("log", {"level": "info", "source": "export",
+                                        "message": f"uploading {result.path} to {creds.username}/{name} ..."})
+            repo_id, url = push_folder(result.path, creds, name, hub_private)
+            result = result.model_copy(update={"hub_repo_id": repo_id, "hub_url": url})
+            self.events.publish("log", {"level": "info", "source": "export", "message": f"pushed to {url}"})
         self.events.publish("export", result.model_dump())
         return result
 
